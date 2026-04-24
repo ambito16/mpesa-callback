@@ -17,6 +17,8 @@ const client = new Client()
 const databases = new Databases(client);
 
 // ================= HEALTH CHECK =================
+
+console.log("🔥 RAW BODY:", JSON.stringify(req.body, null, 2));
 app.get("/", (req, res) => {
   console.log("🔥 GET HIT");
   res.send("OK");
@@ -27,7 +29,11 @@ app.post("/callback", async (req, res) => {
   console.log("🔥 CALLBACK RECEIVED");
   console.log("📦 BODY:", JSON.stringify(req.body));
 
-  const callback = req.body?.Body?.stkCallback;
+//   const callback = req.body?.Body?.stkCallback;
+let callback =
+  req.body?.Body?.stkCallback ||
+  req.body?.stkCallback ||
+  null;
 
   if (!callback) {
     console.log("❌ NO CALLBACK");
