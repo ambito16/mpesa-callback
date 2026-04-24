@@ -72,7 +72,7 @@ let callback =
 
       const amount = get("Amount");
       const mpesaReceipt = get("MpesaReceiptNumber");
-      const phone = get("PhoneNumber");
+      const phoneNumber = get("PhoneNumber");
 
       await databases.updateDocument(
         process.env.APPWRITE_DATABASE_ID,
@@ -82,7 +82,7 @@ let callback =
           status: "paid",
           mpesaCode: mpesaReceipt,
           amount,
-          phone,
+          phoneNumber,
         }
       );
 
