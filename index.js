@@ -68,23 +68,28 @@ let callback =
 
     if (resultCode === 0) {
       const items = callback.CallbackMetadata?.Item || [];
-      const get = (name) => items.find(i => i.Name === name)?.Value;
+    //   const get = (name) => items.find(i => i.Name === name)?.Value;
+    const get = (name) => {
+  const item = items.find(i => i.Name === name);
+  return item ? item.Value : null;
+};
 
       const amount = get("Amount");
       const mpesaReceipt = get("MpesaReceiptNumber");
-      const phoneNumber = get("PhoneNumber");
+    //   const phoneNumber = get("PhoneNumber");
+    const phoneNumber = String(get("PhoneNumber"));
 
       await databases.updateDocument(
-        process.env.APPWRITE_DATABASE_ID,
-        "payments_table",
-        doc.$id,
-        {
-          status: "paid",
-          mpesaCode: mpesaReceipt,
-          amount,
-          phoneNumber,
-        }
-      );
+  process.env.APPWRITE_DATABASE_ID,
+  "payments_table",
+  doc.$id,
+  {
+    status: "paid",
+    mpesaCode: mpesaReceipt || "",
+    amount: amount ? Number(amount) : 0,
+    phoneNumber: String(phoneNumber || ""),
+  }
+);
 
       if (doc.targetMemberId) {
         await databases.updateDocument(
