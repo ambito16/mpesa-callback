@@ -18,7 +18,7 @@ const databases = new Databases(client);
 
 // ================= HEALTH CHECK =================
 
-console.log("🔥 RAW BODY:", JSON.stringify(req.body, null, 2));
+
 app.get("/", (req, res) => {
   console.log("🔥 GET HIT");
   res.send("OK");
@@ -26,6 +26,7 @@ app.get("/", (req, res) => {
 
 // ================= CALLBACK =================
 app.post("/callback", async (req, res) => {
+    console.log("🔥 RAW BODY:", JSON.stringify(req.body, null, 2));
   console.log("🔥 CALLBACK RECEIVED");
   console.log("📦 BODY:", JSON.stringify(req.body));
 
