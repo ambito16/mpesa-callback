@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
+const axios = require("axios");
 const bodyParser = require("body-parser");
 const { Client, Databases, Query } = require("node-appwrite");
 
@@ -130,33 +131,66 @@ const PORT = process.env.PORT || 3000;
 // ============================
 
 // Meta webhook verification
-app.get("/webhook/whatsapp", (req, res) => {
-  const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
-
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    console.log("✅ WhatsApp webhook verified");
-    return res.status(200).send(challenge);
-  }
-
-  console.log("❌ WhatsApp webhook verification failed");
-  res.sendStatus(403);
-});
-
 // Receive WhatsApp messages
-app.post("/webhook/whatsapp", (req, res) => {
+app.post("/webhook/whatsapp", async (req, res) => {
   try {
     console.log("📩 WhatsApp webhook received:");
     console.log(JSON.stringify(req.body, null, 2));
 
+    const message =
+      req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+
+    if (!message) {
+      return res.sendStatus(200);
+    }
+
+    const from = message.from;
+    const messageText = message.text?.body?.trim().toLowerCase();
+
+    console.log("📱 Message from:", from);
+    console.log("💬 Message:", messageText);
+
+    // Reply to Hi / Hello
+    if (
+      message.type === "text" &&
+      ["hi", "hello", "hey"].includes(messageText)
+    ) {
+      const response = await axios.post(
+        `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+        {
+          messaging_product: "whatsapp",
+          to: from,
+          type: "text",
+          text: {
+            body:
+              "👋 Welcome to Karima Fraternity Welfare!\n\n" +
+              "Please choose an option:\n\n" +
+              "1️⃣ My Contributions\n" +
+              "2️⃣ My Profile\n" +
+              "3️⃣ Meeting Information\n" +
+              "4️⃣ Contact Admin\n\n" +
+              "Reply with the number of your choice."
+          }
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      console.log("✅ WhatsApp reply sent:", response.data);
+    }
+
     res.sendStatus(200);
   } catch (error) {
-    console.error("WhatsApp webhook error:", error);
+    console.error(
+      "❌ WhatsApp webhook error:",
+      error.response?.data || error.message
+    );
+
     res.sendStatus(500);
   }
 });
-
 app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));
