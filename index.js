@@ -1242,13 +1242,18 @@ app.post(
       // GET CURRENT SESSION
       // ------------------------------------------------
 
-      const session =
-        userSessions[from];
+      const session = userSessions[from];
 
-      console.log(
-        "🧠 Current session:",
-        session
-      );
+console.log(
+  "🧠 ALL USER SESSIONS:",
+  JSON.stringify(userSessions, null, 2)
+);
+
+console.log(
+  "🧠 SESSION FOR THIS USER:",
+  from,
+  session
+);
 
       // =================================================
       // HI / HELLO / HEY
