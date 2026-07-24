@@ -1025,10 +1025,79 @@ async function checkProbation(
 
     }
 
+    // =================================================
+    // FORMAT DATES
+    // =================================================
+
+    
+
+    const formattedStart =
+      probationStart
+        ? new Date(
+            probationStart
+          ).toLocaleDateString(
+            "en-GB"
+          )
+        : "tarehe isiyojulikana";
+
+    const formattedEnd =
+      probationEnd
+        ? new Date(
+            probationEnd
+          ).toLocaleDateString(
+            "en-GB"
+          )
+        : "tarehe isiyojulikana";
+
+
+
+    // =================================================
+    // PROBATION MESSAGE
+    // =================================================
+
+    const message =
+      "⚠️ PROBATION STATUS\n\n" +
+
+      `Uko probation kutoka tarehe ${formattedStart} hadi tarehe ${formattedEnd} kwa kukosa kuchanga mchango wa ${contributionDescription}.\n\n` +
+
+      "Chagua option hapa chini:";
+
+    userSessions[to] = {
+      state: "PROBATION",
+      memberId: memberId
+    };
+
+    await sendWhatsAppButtons(
+      to,
+      message,
+      [
+        {
+          id: "main_menu",
+          title: "🏠 Main Menu"
+        }
+      ]
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Probation check error:",
+      error
+    );
+
+    await sendWhatsAppMessage(
+      to,
+
+      "❌ Samahani, hatukuweza kuangalia probation status yako kwa sasa. Tafadhali jaribu tena baadaye."
+    );
+  }
+}
+
 
     // =====================================================
 // GET ACTIVE CONTRIBUTION
 // =====================================================
+
 
 async function getActiveContribution() {
 
@@ -1078,50 +1147,273 @@ async function getActiveContribution() {
   return activeContribution || null;
 }
 
+
+
+// =====================================================
+// CHECK MEMBER PAYMENT
+// =====================================================
+
+async function hasMemberPaid(
+  memberId,
+  contributionId
+) {
+
+  const result =
+    await databases.listDocuments(
+      DATABASE_ID,
+      PAYMENTS_COLLECTION,
+      [
+        Query.equal(
+          "memberId",
+          memberId
+        ),
+
+        Query.equal(
+          "contributionId",
+          contributionId
+        ),
+
+        Query.equal(
+          "status",
+          "paid"
+        ),
+
+        Query.limit(1)
+      ]
+    );
+
+  return (
+    result.documents.length > 0
+  );
+}
+
+
+        // =====================================================
+// CALCULATE DAYS LEFT
+// =====================================================
+
+function getDaysLeft(
+  deadlineDate
+) {
+
+  const now =
+    new Date();
+
+  const deadline =
+    new Date(
+      deadlineDate
+    );
+
+  const difference =
+    deadline.getTime() -
+    now.getTime();
+
+  const days =
+    Math.ceil(
+      difference /
+      (
+        1000 *
+        60 *
+        60 *
+        24
+      )
+    );
+
+  return Math.max(
+    days,
+    0
+  );
+}
+
+// =====================================================
+// DISPLAY CONTRIBUTIONS
+// =====================================================
+
+async function showContributions(
+  to,
+  memberId
+) {
+
+  try {
+
+    console.log(
+      "💰 Showing contributions for:",
+      memberId
+    );
+
+    // -----------------------------------------------
+    // GET ACTIVE CONTRIBUTION
+    // -----------------------------------------------
+
+    const activeContribution =
+      await getActiveContribution();
+
+    // -----------------------------------------------
+    // GET ALL CONTRIBUTIONS
+    // -----------------------------------------------
+
+    const contributionResult =
+      await databases.listDocuments(
+        DATABASE_ID,
+        CONTRIBUTIONS_COLLECTION,
+        [
+          Query.limit(20)
+        ]
+      );
+
+    const contributions =
+      contributionResult.documents;
+
+    // -----------------------------------------------
+    // SORT LATEST FIRST
+    // -----------------------------------------------
+
+    contributions.sort(
+      (a, b) => {
+
+        const dateA =
+          new Date(
+            a.startDate ||
+            a.$createdAt
+          );
+
+        const dateB =
+          new Date(
+            b.startDate ||
+            b.$createdAt
+          );
+
+        return (
+          dateB - dateA
+        );
+
+      }
+    );
+
+    let message =
+      "💰 MY CONTRIBUTIONS\n\n";
+
     // =================================================
-    // FORMAT DATES
+    // ACTIVE CONTRIBUTION
     // =================================================
 
-    
+    if (
+      activeContribution
+    ) {
 
-    const formattedStart =
-      probationStart
-        ? new Date(
-            probationStart
-          ).toLocaleDateString(
-            "en-GB"
-          )
-        : "tarehe isiyojulikana";
+      const paid =
+        await hasMemberPaid(
+          memberId,
+          activeContribution.$id
+        );
 
-    const formattedEnd =
-      probationEnd
-        ? new Date(
-            probationEnd
-          ).toLocaleDateString(
-            "en-GB"
-          )
-        : "tarehe isiyojulikana";
+      const daysLeft =
+        getDaysLeft(
+          activeContribution.deadlineDate
+        );
+
+      message +=
+  `1️⃣ ${activeContribution.description || ""}: ${activeContribution.title}\n\n`;
+
+      if (
+        paid
+      ) {
+
+        message +=
+          "✅ Wewe umelipa tayari.\n\n";
+
+      } else {
+
+        message +=
+          "❌ Wewe bado hujalipa.\n\n" +
+
+          `Je! Ungependa kulipa sasa?\n` +
+
+          `⏳ Kumbuka: Imebakia siku ${daysLeft} hadi deadline.\n\n`;
+
+      }
+
+    }
 
     // =================================================
-    // PROBATION MESSAGE
+    // PREVIOUS CONTRIBUTIONS
     // =================================================
 
-    const message =
-      "⚠️ PROBATION STATUS\n\n" +
+    const previousContributions =
+      contributions.filter(
+        (contribution) => {
 
-      `Uko probation kutoka tarehe ${formattedStart} hadi tarehe ${formattedEnd} kwa kukosa kuchanga mchango wa ${contributionDescription}.\n\n` +
+          if (
+            !activeContribution
+          ) {
 
-      "Chagua option hapa chini:";
+            return true;
+
+          }
+
+          return (
+            contribution.$id !==
+            activeContribution.$id
+          );
+
+        }
+      );
+
+    if (
+      previousContributions.length > 0
+    ) {
+
+      message +=
+        "━━━━━━━━━━━━━━━━━━\n\n" +
+
+        "📜 PREVIOUS CONTRIBUTIONS\n\n";
+
+      previousContributions.forEach(
+        (contribution, index) => {
+
+          message +=
+            `${index + 1}️⃣ ${contribution.title}\n`;
+
+        }
+      );
+
+    }
+
+    // =================================================
+    // NO CONTRIBUTIONS
+    // =================================================
+
+    if (
+      !activeContribution &&
+      previousContributions.length === 0
+    ) {
+
+      message +=
+        "Hakuna taarifa ya michango iliyopatikana.\n\n";
+
+    }
+
+    // =================================================
+    // SAVE SESSION
+    // =================================================
 
     userSessions[to] = {
-      state: "PROBATION",
+      state: "CONTRIBUTIONS",
       memberId: memberId
     };
+
+    // =================================================
+    // SEND MESSAGE
+    // =================================================
 
     await sendWhatsAppButtons(
       to,
       message,
       [
+        {
+          id: "make_payment",
+          title: "💰 Lipa Sasa"
+        },
         {
           id: "main_menu",
           title: "🏠 Main Menu"
@@ -1132,18 +1424,20 @@ async function getActiveContribution() {
   } catch (error) {
 
     console.error(
-      "❌ Probation check error:",
+      "❌ Contributions error:",
+      error.response?.data ||
+      error.message ||
       error
     );
 
     await sendWhatsAppMessage(
       to,
 
-      "❌ Samahani, hatukuweza kuangalia probation status yako kwa sasa. Tafadhali jaribu tena baadaye."
+      "❌ Samahani, hatukuweza kupata taarifa za michango yako kwa sasa. Tafadhali jaribu tena baadaye."
     );
+
   }
 }
-
 // =====================================================
 // WHATSAPP WEBHOOK
 // =====================================================
@@ -1242,28 +1536,57 @@ if (!session) {
         "MAIN_MENU"
       ) {
 
-        // ------------------------------------------------
-        // 1 - CONTRIBUTIONS
-        // ------------------------------------------------
+      // ------------------------------------------------
+// 1 - CONTRIBUTIONS
+// ------------------------------------------------
 
-        if (
-          messageText === "1"
-        ) {
+if (
+  messageText === "1"
+) {
 
-          await sendWhatsAppMessage(
-            from,
+  // Member already identified
+  if (
+    session.memberId
+  ) {
 
-            "💰 My Contributions\n\n" +
+    await showContributions(
+      from,
+      session.memberId
+    );
 
-            "🚧 Huduma hii bado inatengenezwa.\n\n" +
+    return res.sendStatus(
+      200
+    );
+  }
 
-            "Tafadhali chagua option nyingine."
-          );
+  // First time: ask for ID or Membership Number
 
-          return res.sendStatus(
-            200
-          );
-        }
+  userSessions[from] = {
+    state:
+      "AWAITING_CONTRIBUTIONS_LOOKUP"
+  };
+
+  await sendWhatsAppMessage(
+    from,
+
+    "💰 My Contributions\n\n" +
+
+    "Tafadhali thibitisha utambulisho wako kwa kuweka:\n\n" +
+
+    "• ID Number yako\n" +
+    "au\n" +
+    "• Membership Number yako\n\n" +
+
+    "Mfano:\n" +
+    "12345678\n" +
+    "au\n" +
+    "KRM001"
+  );
+
+  return res.sendStatus(
+    200
+  );
+}
 
         // ------------------------------------------------
         // 2 - PROFILE
@@ -1394,6 +1717,54 @@ if (!session) {
           200
         );
       }
+
+      // =================================================
+// AWAITING CONTRIBUTIONS LOOKUP
+// =================================================
+
+if (
+  session.state ===
+  "AWAITING_CONTRIBUTIONS_LOOKUP"
+) {
+
+  const member =
+    await findMember(
+      messageText
+    );
+
+  if (!member) {
+
+    await sendWhatsAppMessage(
+      from,
+
+      "❌ Samahani.\n\n" +
+
+      "Hatujaweza kupata member mwenye ID Number au Membership Number uliyoingiza.\n\n" +
+
+      "Tafadhali hakikisha umeandika nambari sahihi na ujaribu tena."
+    );
+
+    return res.sendStatus(
+      200
+    );
+  }
+
+  // Save member identity
+  // so we don't ask again
+  userSessions[from] = {
+    state: "CONTRIBUTIONS",
+    memberId: member.$id
+  };
+
+  await showContributions(
+    from,
+    member.$id
+  );
+
+  return res.sendStatus(
+    200
+  );
+}
 
       // =================================================
       // PROFILE MENU
