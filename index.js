@@ -337,9 +337,30 @@ async function sendWhatsAppButtons(to, bodyText, buttons) {
 
 async function sendMainMenu(to) {
 
-  userSessions[to] = {
-    state: "MAIN_MENU"
-  };
+  // -----------------------------------------------
+  // CHECK IF WE ALREADY KNOW THIS MEMBER
+  // -----------------------------------------------
+
+  const existingSession =
+    userSessions[to];
+
+  if (
+    existingSession?.memberId
+  ) {
+
+    userSessions[to] = {
+      state: "MAIN_MENU",
+      memberId:
+        existingSession.memberId
+    };
+
+  } else {
+
+    userSessions[to] = {
+      state: "MAIN_MENU"
+    };
+
+  }
 
   const message =
     "👋 Karibu Karima Fraternity Welfare!\n\n" +
@@ -455,8 +476,52 @@ async function findMember(
 }
 
 // =====================================================
-// DISPLAY MEMBER PROFILE
+// GET MEMBER FOR WHATSAPP SESSION
 // =====================================================
+
+async function getMemberForSession(
+  to
+) {
+
+  const session =
+    userSessions[to];
+
+  // -----------------------------------------------
+  // MEMBER ALREADY IDENTIFIED
+  // -----------------------------------------------
+
+  if (
+    session?.memberId
+  ) {
+
+    try {
+
+      const member =
+        await databases.getDocument(
+          DATABASE_ID,
+          MEMBERS_COLLECTION,
+          session.memberId
+        );
+
+      return member;
+
+    } catch (error) {
+
+      console.error(
+        "❌ Saved member no longer found:",
+        error.message
+      );
+
+      // Clear invalid member ID
+
+      delete userSessions[to].memberId;
+
+      return null;
+    }
+  }
+
+  return null;
+}
 
 // =====================================================
 // DISPLAY MEMBER PROFILE
@@ -824,10 +889,6 @@ async function showFamily(
 // PROBATION CHECKER
 // =====================================================
 
-// =====================================================
-// PROBATION CHECKER
-// =====================================================
-
 async function checkProbation(
   to,
   memberId
@@ -964,9 +1025,64 @@ async function checkProbation(
 
     }
 
+
+    // =====================================================
+// GET ACTIVE CONTRIBUTION
+// =====================================================
+
+async function getActiveContribution() {
+
+  const now =
+    new Date();
+
+  const result =
+    await databases.listDocuments(
+      DATABASE_ID,
+      CONTRIBUTIONS_COLLECTION,
+      [
+        Query.limit(20)
+      ]
+    );
+
+  const activeContribution =
+    result.documents.find(
+      (contribution) => {
+
+        if (
+          !contribution.startDate ||
+          !contribution.deadlineDate
+        ) {
+
+          return false;
+
+        }
+
+        const startDate =
+          new Date(
+            contribution.startDate
+          );
+
+        const deadlineDate =
+          new Date(
+            contribution.deadlineDate
+          );
+
+        return (
+          now >= startDate &&
+          now <= deadlineDate
+        );
+
+      }
+    );
+
+  return activeContribution || null;
+}
+
     // =================================================
     // FORMAT DATES
     // =================================================
+
+    
 
     const formattedStart =
       probationStart
@@ -1388,38 +1504,46 @@ if (
   );
 }
 
-      // =================================================
-      // PROBATION MENU
-      // =================================================
+     // =================================================
+// PROBATION MENU
+// =================================================
 
-      if (
-        session.state ===
-        "PROBATION"
-      ) {
+if (
+  session.state ===
+  "PROBATION"
+) {
 
-        if (
-          messageText === "1"
-        ) {
+  // ------------------------------------------------
+  // MAIN MENU BUTTON
+  // ------------------------------------------------
 
-          await sendMainMenu(
-            from
-          );
+  if (
+    messageText === "main_menu"
+  ) {
 
-          return res.sendStatus(
-            200
-          );
-        }
+    await sendMainMenu(
+      from
+    );
 
-        await sendWhatsAppMessage(
-          from,
+    return res.sendStatus(
+      200
+    );
+  }
 
-          "🏠 Reply 1️⃣ kurudi Main Menu."
-        );
+  // ------------------------------------------------
+  // INVALID RESPONSE
+  // ------------------------------------------------
 
-        return res.sendStatus(
-          200
-        );
-      }
+  await sendWhatsAppMessage(
+    from,
+
+    "❌ Tafadhali tumia button iliyo chini."
+  );
+
+  return res.sendStatus(
+    200
+  );
+}
 
       // =================================================
       // FALLBACK
