@@ -1513,6 +1513,16 @@ app.post(
 const session = userSessions[from];
 
 console.log(
+  "🔍 CURRENT SESSION BEFORE PROCESSING:",
+  JSON.stringify(session, null, 2)
+);
+
+console.log(
+  "🔍 MESSAGE TEXT:",
+  messageText
+);
+
+console.log(
   "🧠 ALL USER SESSIONS:",
   JSON.stringify(userSessions, null, 2)
 );
