@@ -1766,6 +1766,261 @@ if (
   );
 }
 
+
+// =================================================
+// CONTRIBUTIONS MENU
+// =================================================
+
+if (
+  session.state ===
+  "CONTRIBUTIONS"
+) {
+
+  // -------------------------------------------------
+  // LIPA SASA
+  // -------------------------------------------------
+
+  if (
+    messageText === "make_payment"
+  ) {
+
+    userSessions[from] = {
+      state:
+        "AWAITING_MPESA_NUMBER",
+
+      memberId:
+        session.memberId
+    };
+
+    await sendWhatsAppMessage(
+      from,
+
+      "💰 LIPA SASA\n\n" +
+
+      "Tafadhali weka nambari ya M-Pesa utakayotumia kulipa.\n\n" +
+
+      "Mfano:\n" +
+      "0712345678"
+    );
+
+    return res.sendStatus(
+      200
+    );
+  }
+
+
+  // =================================================
+// AWAITING MPESA NUMBER
+// =================================================
+
+if (
+  session.state ===
+  "AWAITING_MPESA_NUMBER"
+) {
+
+  const mpesaNumber =
+    messageText;
+
+  // Basic phone validation
+
+  if (
+    !/^0?7\d{8}$/.test(
+      mpesaNumber
+    )
+  ) {
+
+    await sendWhatsAppMessage(
+      from,
+
+      "❌ Nambari ya M-Pesa si sahihi.\n\n" +
+
+      "Tafadhali weka nambari sahihi.\n\n" +
+
+      "Mfano:\n" +
+      "0712345678"
+    );
+
+    return res.sendStatus(
+      200
+    );
+  }
+
+  console.log(
+    "📱 M-Pesa number received:",
+    mpesaNumber
+  );
+
+  // For now, save the number in session
+
+  userSessions[from] = {
+    state:
+      "PROCESSING_PAYMENT",
+
+    memberId:
+      session.memberId,
+
+    mpesaNumber:
+      mpesaNumber
+  };
+
+ // =================================================
+// GET ACTIVE CONTRIBUTION
+// =================================================
+
+const activeContribution =
+  await getActiveContribution();
+
+if (!activeContribution) {
+
+  await sendWhatsAppMessage(
+    from,
+
+    "❌ Hakuna mchango unaoendelea kwa sasa."
+  );
+
+  return res.sendStatus(
+    200
+  );
+}
+
+// =================================================
+// SEND STK PUSH
+// =================================================
+
+try {
+
+  await sendWhatsAppMessage(
+    from,
+
+    "⏳ Tafadhali subiri...\n\n" +
+
+    "Tunatuma ombi la malipo kwa nambari yako ya M-Pesa."
+  );
+
+  const stkResponse =
+    await axios.post(
+      process.env.STK_PUSH_FUNCTION_URL,
+
+      {
+        phoneNumber:
+          mpesaNumber,
+
+        amount:
+  activeContribution.amountPerMember,
+
+        accountRef:
+          activeContribution.title,
+
+        memberId:
+          session.memberId,
+
+        contributionId:
+          activeContribution.$id,
+
+        targetMemberId:
+          session.memberId,
+
+        payerId:
+          session.memberId
+      }
+    );
+
+  console.log(
+    "📥 STK FUNCTION RESPONSE:",
+    stkResponse.data
+  );
+
+  if (
+    !stkResponse.data?.success
+  ) {
+
+    throw new Error(
+      stkResponse.data?.error ||
+      "STK Push failed"
+    );
+
+  }
+
+  userSessions[from] = {
+    state:
+      "PAYMENT_PENDING",
+
+    memberId:
+      session.memberId,
+
+    mpesaNumber:
+      mpesaNumber,
+
+    contributionId:
+      activeContribution.$id,
+
+    contributionTitle:
+      activeContribution.title
+  };
+
+  await sendWhatsAppMessage(
+    from,
+
+    "📲 STK Push imetumwa!\n\n" +
+
+    "Tafadhali angalia simu yako na uweke M-Pesa PIN yako kukamilisha malipo."
+  );
+
+} catch (error) {
+
+  console.error(
+    "❌ STK Push ERROR:",
+    error.response?.data ||
+    error.message ||
+    error
+  );
+
+  await sendWhatsAppMessage(
+    from,
+
+    "❌ Samahani, hatukuweza kuanzisha malipo kwa sasa.\n\n" +
+
+    "Tafadhali hakikisha nambari ya M-Pesa ni sahihi na ujaribu tena."
+  );
+
+}
+
+return res.sendStatus(
+  200
+);
+}
+
+  // -------------------------------------------------
+  // MAIN MENU
+  // -------------------------------------------------
+
+  if (
+    messageText === "main_menu"
+  ) {
+
+    await sendMainMenu(
+      from
+    );
+
+    return res.sendStatus(
+      200
+    );
+  }
+
+  // -------------------------------------------------
+  // INVALID OPTION
+  // -------------------------------------------------
+
+  await sendWhatsAppMessage(
+    from,
+
+    "❌ Tafadhali tumia button iliyo chini."
+  );
+
+  return res.sendStatus(
+    200
+  );
+}
       // =================================================
       // PROFILE MENU
       // =================================================
