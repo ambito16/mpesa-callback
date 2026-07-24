@@ -1850,144 +1850,139 @@ if (
     mpesaNumber
   );
 
-  // For now, save the number in session
+  // =================================================
+  // GET ACTIVE CONTRIBUTION
+  // =================================================
 
-  userSessions[from] = {
-    state:
-      "PROCESSING_PAYMENT",
+  const activeContribution =
+    await getActiveContribution();
 
-    memberId:
-      session.memberId,
+  if (!activeContribution) {
 
-    mpesaNumber:
-      mpesaNumber
-  };
+    await sendWhatsAppMessage(
+      from,
 
- // =================================================
-// GET ACTIVE CONTRIBUTION
-// =================================================
-
-const activeContribution =
-  await getActiveContribution();
-
-if (!activeContribution) {
-
-  await sendWhatsAppMessage(
-    from,
-
-    "❌ Hakuna mchango unaoendelea kwa sasa."
-  );
-
-  return res.sendStatus(
-    200
-  );
-}
-
-// =================================================
-// SEND STK PUSH
-// =================================================
-
-try {
-
-  await sendWhatsAppMessage(
-    from,
-
-    "⏳ Tafadhali subiri...\n\n" +
-
-    "Tunatuma ombi la malipo kwa nambari yako ya M-Pesa."
-  );
-
-  const stkResponse =
-    await axios.post(
-      process.env.STK_PUSH_FUNCTION_URL,
-
-      {
-        phoneNumber:
-          mpesaNumber,
-
-        amount:
-  activeContribution.amountPerMember,
-
-        accountRef:
-          activeContribution.title,
-
-        memberId:
-          session.memberId,
-
-        contributionId:
-          activeContribution.$id,
-
-        targetMemberId:
-          session.memberId,
-
-        payerId:
-          session.memberId
-      }
+      "❌ Hakuna mchango unaoendelea kwa sasa."
     );
 
-  console.log(
-    "📥 STK FUNCTION RESPONSE:",
-    stkResponse.data
-  );
+    return res.sendStatus(
+      200
+    );
+  }
 
-  if (
-    !stkResponse.data?.success
-  ) {
+  // =================================================
+  // SEND STK PUSH
+  // =================================================
 
-    throw new Error(
-      stkResponse.data?.error ||
-      "STK Push failed"
+  try {
+
+    await sendWhatsAppMessage(
+      from,
+
+      "⏳ Tafadhali subiri...\n\n" +
+
+      "Tunatuma ombi la malipo kwa nambari yako ya M-Pesa."
+    );
+
+    console.log(
+      "🚀 Calling STK Push Function..."
+    );
+
+    const stkResponse =
+      await axios.post(
+        process.env.STK_PUSH_FUNCTION_URL,
+
+        {
+          phoneNumber:
+            mpesaNumber,
+
+          amount:
+            activeContribution.amountPerMember,
+
+          accountRef:
+            activeContribution.title,
+
+          memberId:
+            session.memberId,
+
+          contributionId:
+            activeContribution.$id,
+
+          targetMemberId:
+            session.memberId,
+
+          payerId:
+            session.memberId
+        }
+      );
+
+    console.log(
+      "📥 STK FUNCTION RESPONSE:",
+      stkResponse.data
+    );
+
+    if (
+      !stkResponse.data?.success
+    ) {
+
+      throw new Error(
+        stkResponse.data?.error ||
+        "STK Push failed"
+      );
+
+    }
+
+    // =================================================
+    // SAVE PAYMENT SESSION
+    // =================================================
+
+    userSessions[from] = {
+      state:
+        "PAYMENT_PENDING",
+
+      memberId:
+        session.memberId,
+
+      mpesaNumber:
+        mpesaNumber,
+
+      contributionId:
+        activeContribution.$id,
+
+      contributionTitle:
+        activeContribution.title
+    };
+
+    await sendWhatsAppMessage(
+      from,
+
+      "📲 STK Push imetumwa!\n\n" +
+
+      "Tafadhali angalia simu yako na uweke M-Pesa PIN yako kukamilisha malipo."
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ STK Push ERROR:",
+      error.response?.data ||
+      error.message ||
+      error
+    );
+
+    await sendWhatsAppMessage(
+      from,
+
+      "❌ Samahani, hatukuweza kuanzisha malipo kwa sasa.\n\n" +
+
+      "Tafadhali jaribu tena baadaye."
     );
 
   }
 
-  userSessions[from] = {
-    state:
-      "PAYMENT_PENDING",
-
-    memberId:
-      session.memberId,
-
-    mpesaNumber:
-      mpesaNumber,
-
-    contributionId:
-      activeContribution.$id,
-
-    contributionTitle:
-      activeContribution.title
-  };
-
-  await sendWhatsAppMessage(
-    from,
-
-    "📲 STK Push imetumwa!\n\n" +
-
-    "Tafadhali angalia simu yako na uweke M-Pesa PIN yako kukamilisha malipo."
+  return res.sendStatus(
+    200
   );
-
-} catch (error) {
-
-  console.error(
-    "❌ STK Push ERROR:",
-    error.response?.data ||
-    error.message ||
-    error
-  );
-
-  await sendWhatsAppMessage(
-    from,
-
-    "❌ Samahani, hatukuweza kuanzisha malipo kwa sasa.\n\n" +
-
-    "Tafadhali hakikisha nambari ya M-Pesa ni sahihi na ujaribu tena."
-  );
-
-}
-
-return res.sendStatus(
-  200
-);
 }
 
   // -------------------------------------------------
