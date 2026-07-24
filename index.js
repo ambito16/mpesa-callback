@@ -1828,16 +1828,20 @@ if (
   "AWAITING_MPESA_NUMBER"
 ) {
 
+  console.log("🔥 ENTERED AWAITING_MPESA_NUMBER BLOCK");
+
   const mpesaNumber =
     messageText;
+
+    console.log("🔥 MPESA NUMBER:", mpesaNumber);
 
   // Basic phone validation
 
   if (
-    !/^0?7\d{8}$/.test(
-      mpesaNumber
-    )
-  ) {
+  !/^(07\d{8}|2547\d{8})$/.test(
+    mpesaNumber
+  )
+) {
 
     await sendWhatsAppMessage(
       from,
