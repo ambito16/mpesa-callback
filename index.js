@@ -1700,7 +1700,7 @@ if (
             "Tafadhali hakikisha umeandika nambari sahihi na ujaribu tena.\n\n" +
 
             "Mfano:\n" +
-            "12345678 *Ama* 035\n" +
+            "12345678 *Ama* 035\n" 
           );
 
           return res.sendStatus(
