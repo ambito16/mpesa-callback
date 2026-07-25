@@ -363,16 +363,16 @@ async function sendMainMenu(to) {
   }
 
   const message =
-    "👋 Karibu Karima Fraternity Welfare!\n\n" +
+    "👋    *Karibu Karima Fraternity!*\n\n" +
 
-    "Tafadhali chagua option:\n\n" +
+    "_Tafadhali chagua option:_\n\n" +
 
     "1️⃣ My Contributions\n" +
     "2️⃣ My Profile\n" +
     "3️⃣ Meeting Information\n" +
     "4️⃣ Contact Admin\n\n" +
 
-    "Reply with the number of your choice.";
+    "_Reply with the number of your choice._";
 
   await sendWhatsAppMessage(
     to,
@@ -400,13 +400,11 @@ async function askForProfileLookup(
 
     "Tafadhali weka:\n\n" +
 
-    "• ID Number yako\n" +
-    "ama\n" +
+    "• ID Number yako. *Ama*\n" +
+  
     "• Membership Number yako\n\n" +
 
-    "Mfano: 12345678\n" +
-    "au\n" +
-    "001"
+    "Mfano: 12345678 *Ama* 013"
   );
 }
 
@@ -549,11 +547,11 @@ async function showMemberProfile(
       .join(" ");
 
   const message =
-    `👋 Karibu ${fullName}!\n\n` +
+    `👋 *Karibu ${fullName}!*\n\n` +
 
     "Wewe ni member wa nguvu. 💪\n\n" +
 
-    `🆔 Membership Number: ${member.membershipNumber}\n\n` +
+    `🆔 Membership Number: *${member.membershipNumber}*\n\n` +
 
     "━━━━━━━━━━━━━━━━━━\n\n" +
 
@@ -703,7 +701,7 @@ async function showFamily(
       );
 
     let message =
-      "👨‍👩‍👧‍👦 FAMILIA YAKO\n\n";
+      "👨‍👩‍👧‍👦 *FAMILIA YAKO*\n\n";
 
     // -------------------------------------------------
     // SPOUSE
@@ -880,7 +878,7 @@ async function showFamily(
     await sendWhatsAppMessage(
       to,
 
-      "❌ Samahani, kumetokea tatizo wakati wa kupata taarifa za familia yako. Tafadhali jaribu tena baadaye."
+      "❌ Pole sana, System iko na issue kidogo. Tafadhali jaribu tena masaa inengi."
     );
   }
 }
@@ -928,9 +926,9 @@ async function checkProbation(
       const message =
         "✅ PROBATION STATUS\n\n" +
 
-        "Hauko probation.\n\n" +
+        "*Hauko probation wewe.*\n\n" +
 
-        "Uko sawa kabisa na michango yako. 💪\n\n" +
+        "Uko sawa kabisa na contributions zako. 💪\n\n" +
 
         "Chagua option hapa chini:";
 
@@ -1058,7 +1056,7 @@ async function checkProbation(
     const message =
       "⚠️ PROBATION STATUS\n\n" +
 
-      `Uko probation kutoka tarehe ${formattedStart} hadi tarehe ${formattedEnd} kwa kukosa kuchanga mchango wa ${contributionDescription}.\n\n` +
+      `Uko probation kutoka date ${formattedStart} hadi date ${formattedEnd} kwa kukosa kutolea ${contributionDescription}, confirm na Treasurer.\n\n` +
 
       "Chagua option hapa chini:";
 
@@ -1588,9 +1586,7 @@ if (
     "• Membership Number yako\n\n" +
 
     "Mfano:\n" +
-    "12345678 au *001*\n" 
-    // "au\n" +
-    // "001"
+    "12345678 au *001*\n"
   );
 
   return res.sendStatus(
@@ -1647,9 +1643,9 @@ if (
           await sendWhatsAppMessage(
             from,
 
-            "📞 Contact Admin\n\n" +
+            "📞 *Contact Admin*\n\n" +
 
-            "🚧 Taarifa za admin bado zinawekwa."
+            "🚧 Portal ya ofisi bado inatengenezwa."
           );
 
           return res.sendStatus(
@@ -1664,7 +1660,7 @@ if (
         await sendWhatsAppMessage(
           from,
 
-          "❌ Option uliyochagua haipo.\n\n" +
+          "❌ *Option umechagua haipo.*\n\n" +
 
           "Tafadhali reply na 1, 2, 3 au 4."
         );
@@ -1697,16 +1693,14 @@ if (
           await sendWhatsAppMessage(
             from,
 
-            "❌ Samahani.\n\n" +
+            "❌ *Samahani.*\n\n" +
 
             "Hatujaweza kupata member mwenye ID Number au Membership Number uliyoingiza.\n\n" +
 
             "Tafadhali hakikisha umeandika nambari sahihi na ujaribu tena.\n\n" +
 
             "Mfano:\n" +
-            "12345678\n" +
-            "au\n" +
-            "001"
+            "12345678 *Ama* 035\n" +
           );
 
           return res.sendStatus(
@@ -1749,9 +1743,9 @@ if (
 
       "❌ Samahani.\n\n" +
 
-      "Hatujaweza kupata member mwenye ID Number au Membership Number uliyoingiza.\n\n" +
+      "Sijaweza kupata member mwenye ID Number ama Membership Number umeweka.\n\n" +
 
-      "Tafadhali hakikisha umeandika nambari sahihi na ujaribu tena."
+      "Tafadhali hakikisha umeandika namba iko sawa na ujaribu tena."
     );
 
     return res.sendStatus(
