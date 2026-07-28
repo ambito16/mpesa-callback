@@ -943,9 +943,20 @@ async function checkProbation(
   "🔍 CHECKING PROBATION CONDITION"
 );
 
-    if (
-      member.isOnProbation !== true
-    ) {
+    console.log(
+  "⚠️ isOnProbation value:",
+  member.isOnProbation
+);
+
+console.log(
+  "⚠️ isOnProbation type:",
+  typeof member.isOnProbation
+);
+
+if (
+  member.isOnProbation !== true &&
+  member.isOnProbation !== "true"
+) {
 
       userSessions[to] = {
         state: "PROBATION",
