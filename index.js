@@ -1004,83 +1004,125 @@ if (
       return;
     }
 
-    // =================================================
-    // MEMBER IS ON PROBATION
-    // =================================================
-
-    const probationStart =
-      member.probationStartDate;
-
-   // =================================================
-// PROBATION INFORMATION
+    
+  // =================================================
+// GET MISSED CONTRIBUTION
 // =================================================
+
+console.log(
+  "📌 CONTRIBUTION ID FROM MEMBER:",
+  member.contributionId
+);
+
+let formattedStart =
+  "tarehe isiyojulikana";
+
+let formattedEnd =
+  "tarehe isiyojulikana";
 
 let contributionDescription =
   "mchango husika";
 
-// Use the dates already saved on the member
-
-// =================================================
-// FORMAT PROBATION DATES
-// =================================================
-
-// Start date comes from Appwrite
-
-const startDate =
-  probationStart
-    ? new Date(
-        probationStart
-      )
-    : null;
-
-// Create a new date from the start date
-
-const endDate =
-  startDate
-    ? new Date(
-        startDate
-      )
-    : null;
-
-// WhatsApp calculates ONE YEAR
-
 if (
-  endDate
+  member.contributionId
 ) {
 
-  endDate.setFullYear(
-    endDate.getFullYear() + 1
+  const contribution =
+    await databases.getDocument(
+      DATABASE_ID,
+      CONTRIBUTIONS_COLLECTION,
+      member.contributionId
+    );
+
+  console.log(
+    "✅ MISSED CONTRIBUTION FOUND:",
+    JSON.stringify(
+      contribution,
+      null,
+      2
+    )
+  );
+
+  // Get the contribution deadline
+
+  const startDate =
+    contribution.deadlineDate
+      ? new Date(
+          contribution.deadlineDate
+        )
+      : null;
+
+  // Create the WhatsApp probation end date
+
+  const endDate =
+    startDate
+      ? new Date(
+          startDate
+        )
+      : null;
+
+  // Add ONE YEAR
+
+  if (
+    endDate
+  ) {
+
+    endDate.setFullYear(
+      endDate.getFullYear() + 1
+    );
+
+  }
+
+  // Format start date
+
+  if (
+    startDate
+  ) {
+
+    formattedStart =
+      startDate.toLocaleDateString(
+        "en-GB",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }
+      );
+
+  }
+
+  // Format end date
+
+  if (
+    endDate
+  ) {
+
+    formattedEnd =
+      endDate.toLocaleDateString(
+        "en-GB",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }
+      );
+
+  }
+
+  // Get contribution description
+
+  contributionDescription =
+    contribution.description ||
+    contribution.title ||
+    "mchango husika";
+
+} else {
+
+  console.log(
+    "❌ NO contributionId FOUND ON MEMBER"
   );
 
 }
-
-// Format probation start date
-
-const formattedStart =
-  startDate
-    ? startDate.toLocaleDateString(
-        "en-GB",
-        {
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        }
-      )
-    : "tarehe isiyojulikana";
-
-// Format probation end date
-
-const formattedEnd =
-  endDate
-    ? endDate.toLocaleDateString(
-        "en-GB",
-        {
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        }
-      )
-    : "tarehe isiyojulikana";
     // =================================================
     // PROBATION MESSAGE
     // =================================================
