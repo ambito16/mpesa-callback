@@ -396,7 +396,7 @@ async function askForProfileLookup(
   await sendWhatsAppMessage(
     to,
 
-    "👤 My Profile\n\n" +
+    "👤 *My Profile*\n\n" +
 
     "Tafadhali weka:\n\n" +
 
@@ -1289,7 +1289,7 @@ async function showContributions(
     );
 
     let message =
-      "💰 MY CONTRIBUTIONS\n\n";
+      "💰 *CONTRIBUTIONS*\n\n";
 
     // =================================================
     // ACTIVE CONTRIBUTION
@@ -1325,7 +1325,7 @@ async function showContributions(
         message +=
           "❌ Wewe bado hujalipa.\n\n" +
 
-          `Je! Ungependa kulipa sasa?\n` +
+          `Je! Ungependa kulipa sa hizi?\n` +
 
           `⏳ Kumbuka: Imebakia siku ${daysLeft} hadi deadline.\n\n`;
 
@@ -1364,7 +1364,7 @@ async function showContributions(
       message +=
         "━━━━━━━━━━━━━━━━━━\n\n" +
 
-        "📜 PREVIOUS CONTRIBUTIONS\n\n";
+        "📜 *PREVIOUS CONTRIBUTIONS*\n\n";
 
       previousContributions.forEach(
         (contribution, index) => {
@@ -1410,7 +1410,7 @@ async function showContributions(
       [
         {
           id: "make_payment",
-          title: "💰 Lipa Sasa"
+          title: "💰 Lipa Saa hii"
         },
         {
           id: "main_menu",
@@ -1577,7 +1577,7 @@ if (
   await sendWhatsAppMessage(
     from,
 
-    "💰 My Contributions\n\n" +
+    "💰 *Contributions*\n\n" +
 
     "Tafadhali thibitisha utambulisho wako kwa kuweka:\n\n" +
 
@@ -1799,7 +1799,7 @@ if (
     await sendWhatsAppMessage(
       from,
 
-      "💰 LIPA SASA\n\n" +
+      "💰 *LIPA SASA*\n\n" +
 
       "Tafadhali weka nambari ya M-Pesa utakayotumia kulipa.\n\n" +
 
