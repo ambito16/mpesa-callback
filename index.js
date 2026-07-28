@@ -501,6 +501,31 @@ async function getMemberForSession(
           session.memberId
         );
 
+
+        console.log(
+  "✅ MEMBER FOUND:",
+  JSON.stringify(
+    member,
+    null,
+    2
+  )
+);
+
+console.log(
+  "📅 PROBATION START:",
+  member.probationStartDate
+);
+
+console.log(
+  "📅 PROBATION END:",
+  member.probationEndDate
+);
+
+console.log(
+  "⚠️ IS ON PROBATION:",
+  member.isOnProbation
+);
+
       return member;
 
     } catch (error) {
@@ -914,6 +939,10 @@ async function checkProbation(
     // MEMBER NOT ON PROBATION
     // =================================================
 
+    console.log(
+  "🔍 CHECKING PROBATION CONDITION"
+);
+
     if (
       member.isOnProbation !== true
     ) {
@@ -1101,10 +1130,24 @@ const formattedEnd =
 
   } catch (error) {
 
+    // console.error(
+    //   "❌ Probation check error:",
+    //   error
+    // );
     console.error(
-      "❌ Probation check error:",
-      error
-    );
+  "❌ PROBATION ERROR MESSAGE:",
+  error.message
+);
+
+console.error(
+  "❌ PROBATION ERROR RESPONSE:",
+  error.response?.data
+);
+
+console.error(
+  "❌ FULL PROBATION ERROR:",
+  error
+);
 
     await sendWhatsAppMessage(
       to,
