@@ -935,6 +935,15 @@ async function checkProbation(
         memberId
       );
 
+      console.log(
+  "👤 FULL MEMBER DOCUMENT:",
+  JSON.stringify(
+    member,
+    null,
+    2
+  )
+);
+
     // =================================================
     // MEMBER NOT ON PROBATION
     // =================================================
