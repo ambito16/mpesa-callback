@@ -993,9 +993,6 @@ if (
     const probationStart =
       member.probationStartDate;
 
-    const probationEnd =
-      member.probationEndDate;
-
    // =================================================
 // PROBATION INFORMATION
 // =================================================
