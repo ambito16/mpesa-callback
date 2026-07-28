@@ -956,99 +956,122 @@ async function checkProbation(
     const probationEnd =
       member.probationEndDate;
 
-    let contributionDescription =
-      "mchango husika";
+   // =================================================
+// PROBATION INFORMATION
+// =================================================
 
-    // =================================================
-    // FIND CONTRIBUTION
-    // =================================================
+let contributionDescription =
+  "mchango husika";
 
-    if (
-      probationStart
-    ) {
+// Use the dates already saved on the member
 
-      const startDate =
-        new Date(
-          probationStart
+const startDate =
+  probationStart
+    ? new Date(probationStart)
+    : null;
+
+const endDate =
+  probationEnd
+    ? new Date(probationEnd)
+    : null;
+
+// =================================================
+// FIND FAILED CONTRIBUTION
+// =================================================
+
+if (startDate) {
+
+  const contributionResult =
+    await databases.listDocuments(
+      DATABASE_ID,
+      CONTRIBUTIONS_COLLECTION,
+      [
+        Query.limit(100)
+      ]
+    );
+
+  const matchingContribution =
+    contributionResult.documents.find(
+      (contribution) => {
+
+        if (
+          !contribution.deadlineDate
+        ) {
+          return false;
+        }
+
+        const contributionDate =
+          new Date(
+            contribution.deadlineDate
+          );
+
+        return (
+          contributionDate
+            .toISOString()
+            .slice(0, 10)
+          ===
+          startDate
+            .toISOString()
+            .slice(0, 10)
         );
-
-      const contributionResult =
-        await databases.listDocuments(
-          DATABASE_ID,
-          CONTRIBUTIONS_COLLECTION,
-          [
-            Query.limit(20)
-          ]
-        );
-
-      const matchingContribution =
-        contributionResult.documents.find(
-          (contribution) => {
-
-            if (
-              !contribution.deadlineDate
-            ) {
-              return false;
-            }
-
-            const contributionDate =
-              new Date(
-                contribution.deadlineDate
-              );
-
-            return (
-              contributionDate.getFullYear() ===
-              startDate.getFullYear() &&
-
-              contributionDate.getMonth() ===
-              startDate.getMonth() &&
-
-              contributionDate.getDate() ===
-              startDate.getDate()
-            );
-
-          }
-        );
-
-      if (
-        matchingContribution
-      ) {
-
-        contributionDescription =
-          matchingContribution.description ||
-          matchingContribution.title ||
-          "mchango husika";
 
       }
+    );
 
-    }
+  if (matchingContribution) {
 
-    // =================================================
-    // FORMAT DATES
-    // =================================================
+    contributionDescription =
+      matchingContribution.description ||
+      matchingContribution.title ||
+      "mchango husika";
 
-    
+    console.log(
+      "✅ MATCHING CONTRIBUTION:",
+      matchingContribution
+    );
 
-    const formattedStart =
+  } else {
+
+    console.log(
+      "❌ NO MATCHING CONTRIBUTION FOUND"
+    );
+
+    console.log(
+      "📅 MEMBER PROBATION START:",
       probationStart
-        ? new Date(
-            probationStart
-          ).toLocaleDateString(
-            "en-GB"
-          )
-        : "tarehe isiyojulikana";
+    );
 
-    const formattedEnd =
-      probationEnd
-        ? new Date(
-            probationEnd
-          ).toLocaleDateString(
-            "en-GB"
-          )
-        : "tarehe isiyojulikana";
+  }
 
+}
 
+// =================================================
+// FORMAT DATES
+// =================================================
 
+const formattedStart =
+  startDate
+    ? startDate.toLocaleDateString(
+        "en-GB",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }
+      )
+    : "tarehe isiyojulikana";
+
+const formattedEnd =
+  endDate
+    ? endDate.toLocaleDateString(
+        "en-GB",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }
+      )
+    : "tarehe isiyojulikana";
     // =================================================
     // PROBATION MESSAGE
     // =================================================
@@ -1056,7 +1079,7 @@ async function checkProbation(
     const message =
       "⚠️ PROBATION STATUS\n\n" +
 
-      `Uko probation kutoka date ${formattedStart} hadi date ${formattedEnd} kwa kukosa kutolea ${contributionDescription}, confirm na Treasurer.\n\n` +
+      `Uko probation kutoka date ${formattedStart} hadi date ${formattedEnd} kwa kukosa kuchangia ${contributionDescription}. Tafadhali confirm na Treasurer.\n\n` +
 
       "Chagua option hapa chini:";
 
