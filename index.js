@@ -1005,89 +1005,41 @@ let contributionDescription =
 
 // Use the dates already saved on the member
 
+// =================================================
+// FORMAT PROBATION DATES
+// =================================================
+
+// Start date comes from Appwrite
+
 const startDate =
   probationStart
-    ? new Date(probationStart)
+    ? new Date(
+        probationStart
+      )
     : null;
+
+// Create a new date from the start date
 
 const endDate =
-  probationEnd
-    ? new Date(probationEnd)
+  startDate
+    ? new Date(
+        startDate
+      )
     : null;
 
-// =================================================
-// FIND FAILED CONTRIBUTION
-// =================================================
+// WhatsApp calculates ONE YEAR
 
-if (startDate) {
+if (
+  endDate
+) {
 
-  const contributionResult =
-    await databases.listDocuments(
-      DATABASE_ID,
-      CONTRIBUTIONS_COLLECTION,
-      [
-        Query.limit(100)
-      ]
-    );
-
-  const matchingContribution =
-    contributionResult.documents.find(
-      (contribution) => {
-
-        if (
-          !contribution.deadlineDate
-        ) {
-          return false;
-        }
-
-        const contributionDate =
-          new Date(
-            contribution.deadlineDate
-          );
-
-        return (
-          contributionDate
-            .toISOString()
-            .slice(0, 10)
-          ===
-          startDate
-            .toISOString()
-            .slice(0, 10)
-        );
-
-      }
-    );
-
-  if (matchingContribution) {
-
-    contributionDescription =
-      matchingContribution.description ||
-      matchingContribution.title ||
-      "mchango husika";
-
-    console.log(
-      "✅ MATCHING CONTRIBUTION:",
-      matchingContribution
-    );
-
-  } else {
-
-    console.log(
-      "❌ NO MATCHING CONTRIBUTION FOUND"
-    );
-
-    console.log(
-      "📅 MEMBER PROBATION START:",
-      probationStart
-    );
-
-  }
+  endDate.setFullYear(
+    endDate.getFullYear() + 1
+  );
 
 }
 
-// =================================================
-// FORMAT DATES
-// =================================================
+// Format probation start date
 
 const formattedStart =
   startDate
@@ -1100,6 +1052,8 @@ const formattedStart =
         }
       )
     : "tarehe isiyojulikana";
+
+// Format probation end date
 
 const formattedEnd =
   endDate
@@ -1117,11 +1071,14 @@ const formattedEnd =
     // =================================================
 
     const message =
-      "⚠️ PROBATION STATUS\n\n" +
+  "⚠️ PROBATION STATUS\n\n" +
 
-      `Uko probation kutoka date ${formattedStart} hadi date ${formattedEnd} kwa kukosa kuchangia ${contributionDescription}. Tafadhali confirm na Treasurer.\n\n` +
+  `Uko probation kutoka tarehe ${formattedStart} ` +
+  `hadi tarehe ${formattedEnd} ` +
+  `kwa kukosa kuchangia ${contributionDescription}. ` +
+  `Tafadhali thibitisha na Treasurer.\n\n` +
 
-      "Chagua option hapa chini:";
+  "Chagua option hapa chini:";
 
     userSessions[to] = {
       state: "PROBATION",
