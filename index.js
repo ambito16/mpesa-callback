@@ -953,6 +953,15 @@ console.log(
   typeof member.isOnProbation
 );
 
+console.log(
+  "🚨 NEW PROBATION CODE VERSION 28"
+);
+
+console.log(
+  "📅 START DATE FROM APPWRITE:",
+  member.probationStartDate
+);
+
 if (
   member.isOnProbation !== true &&
   member.isOnProbation !== "true"
