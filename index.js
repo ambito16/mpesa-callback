@@ -2006,6 +2006,40 @@ if (
 // =================================================
 console.log("🔥 ENTERED AWAITING_MPESA_NUMBER BLOCK");
 
+
+
+  // -------------------------------------------------
+  // MAIN MENU
+  // -------------------------------------------------
+
+  if (
+    messageText === "main_menu"
+  ) {
+
+    await sendMainMenu(
+      from
+    );
+
+    return res.sendStatus(
+      200
+    );
+  }
+
+  // -------------------------------------------------
+  // INVALID OPTION
+  // -------------------------------------------------
+
+  await sendWhatsAppMessage(
+    from,
+
+    "❌ Tafadhali tumia button iliyo chini."
+  );
+
+  return res.sendStatus(
+    200
+  );
+}
+
 if (
   session.state ===
   "AWAITING_MPESA_NUMBER"
@@ -2176,38 +2210,6 @@ if (
     );
 
   }
-
-  return res.sendStatus(
-    200
-  );
-}
-
-  // -------------------------------------------------
-  // MAIN MENU
-  // -------------------------------------------------
-
-  if (
-    messageText === "main_menu"
-  ) {
-
-    await sendMainMenu(
-      from
-    );
-
-    return res.sendStatus(
-      200
-    );
-  }
-
-  // -------------------------------------------------
-  // INVALID OPTION
-  // -------------------------------------------------
-
-  await sendWhatsAppMessage(
-    from,
-
-    "❌ Tafadhali tumia button iliyo chini."
-  );
 
   return res.sendStatus(
     200
