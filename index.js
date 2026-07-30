@@ -297,6 +297,15 @@ async function sendWhatsAppMessage(
   }
 }
 
+const member = await databases.getDocument(
+  DATABASE_ID,
+  MEMBERS_COLLECTION,
+  session.memberId
+);
+
+const accountRef =
+  `${member.firstName} ${member.secondName} ${member.lastName}`;
+
 async function sendWhatsAppButtons(to, bodyText, buttons) {
   await axios.post(
     `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
@@ -2130,8 +2139,7 @@ if (
           amount:
             activeContribution.amountPerMember,
 
-          accountRef:
-            activeContribution.title,
+          accountRef: accountRef,
 
           memberId:
             session.memberId,
