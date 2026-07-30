@@ -254,6 +254,15 @@ async function sendWhatsAppMessage(
 ) {
   try {
 
+    const member = await databases.getDocument(
+  DATABASE_ID,
+  MEMBERS_COLLECTION,
+  session.memberId
+);
+
+const accountRef =
+  `${member.firstName} ${member.secondName} ${member.lastName}`;
+
     const response =
       await axios.post(
         `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
@@ -297,14 +306,7 @@ async function sendWhatsAppMessage(
   }
 }
 
-const member = await databases.getDocument(
-  DATABASE_ID,
-  MEMBERS_COLLECTION,
-  session.memberId
-);
 
-const accountRef =
-  `${member.firstName} ${member.secondName} ${member.lastName}`;
 
 async function sendWhatsAppButtons(to, bodyText, buttons) {
   await axios.post(
