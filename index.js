@@ -254,15 +254,6 @@ async function sendWhatsAppMessage(
 ) {
   try {
 
-    const member = await databases.getDocument(
-  DATABASE_ID,
-  MEMBERS_COLLECTION,
-  session.memberId
-);
-
-const accountRef =
-  `${member.firstName} ${member.secondName} ${member.lastName}`;
-
     const response =
       await axios.post(
         `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
@@ -2130,32 +2121,27 @@ if (
       "🚀 Calling STK Push Function..."
     );
 
-    const stkResponse =
-      await axios.post(
-        process.env.STK_PUSH_FUNCTION_URL,
+    const member = await databases.getDocument(
+  DATABASE_ID,
+  MEMBERS_COLLECTION,
+  session.memberId
+);
 
-        {
-          phoneNumber:
-            mpesaNumber,
+const accountRef =
+  `${member.firstName} ${member.secondName} ${member.lastName}`;
 
-          amount:
-            activeContribution.amountPerMember,
-
-          accountRef: accountRef,
-
-          memberId:
-            session.memberId,
-
-          contributionId:
-            activeContribution.$id,
-
-          targetMemberId:
-            session.memberId,
-
-          payerId:
-            session.memberId
-        }
-      );
+await axios.post(
+  process.env.STK_PUSH_FUNCTION_URL,
+  {
+    phoneNumber: mpesaNumber,
+    amount: activeContribution.amountPerMember,
+    accountRef: accountRef,   // <-- change this line
+    memberId: session.memberId,
+    contributionId: activeContribution.$id,
+    targetMemberId: session.memberId,
+    payerId: session.memberId
+  }
+);
 
     console.log(
       "📥 STK FUNCTION RESPONSE:",
