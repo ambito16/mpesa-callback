@@ -2005,181 +2005,181 @@ if (
 // AWAITING MPESA NUMBER
 // =================================================
 
-// if (
-//   session.state ===
-//   "AWAITING_MPESA_NUMBER"
-// ) {
+if (
+  session.state ===
+  "AWAITING_MPESA_NUMBER"
+) {
 
-//   console.log("🔥 ENTERED AWAITING_MPESA_NUMBER BLOCK");
+  console.log("🔥 ENTERED AWAITING_MPESA_NUMBER BLOCK");
 
-//   const mpesaNumber =
-//     messageText;
+  const mpesaNumber =
+    messageText;
 
-//     console.log("🔥 MPESA NUMBER:", mpesaNumber);
+    console.log("🔥 MPESA NUMBER:", mpesaNumber);
 
-//   // Basic phone validation
+  // Basic phone validation
 
-//   if (
-//   !/^(07\d{8}|2547\d{8})$/.test(
-//     mpesaNumber
-//   )
-// ) {
+  if (
+  !/^(07\d{8}|2547\d{8})$/.test(
+    mpesaNumber
+  )
+) {
 
-//     await sendWhatsAppMessage(
-//       from,
+    await sendWhatsAppMessage(
+      from,
 
-//       "❌ Nambari ya M-Pesa si sahihi.\n\n" +
+      "❌ Nambari ya M-Pesa si sahihi.\n\n" +
 
-//       "Tafadhali weka nambari sahihi.\n\n" +
+      "Tafadhali weka nambari sahihi.\n\n" +
 
-//       "Mfano:\n" +
-//       "0712345678"
-//     );
+      "Mfano:\n" +
+      "0712345678"
+    );
 
-//     return res.sendStatus(
-//       200
-//     );
-//   }
+    return res.sendStatus(
+      200
+    );
+  }
 
-//   console.log(
-//     "📱 M-Pesa number received:",
-//     mpesaNumber
-//   );
+  console.log(
+    "📱 M-Pesa number received:",
+    mpesaNumber
+  );
 
-//   // =================================================
-//   // GET ACTIVE CONTRIBUTION
-//   // =================================================
+  // =================================================
+  // GET ACTIVE CONTRIBUTION
+  // =================================================
 
-//   const activeContribution =
-//     await getActiveContribution();
+  const activeContribution =
+    await getActiveContribution();
 
-//   if (!activeContribution) {
+  if (!activeContribution) {
 
-//     await sendWhatsAppMessage(
-//       from,
+    await sendWhatsAppMessage(
+      from,
 
-//       "❌ Hakuna mchango unaoendelea kwa sasa."
-//     );
+      "❌ Hakuna mchango unaoendelea kwa sasa."
+    );
 
-//     return res.sendStatus(
-//       200
-//     );
-//   }
+    return res.sendStatus(
+      200
+    );
+  }
 
-//   // =================================================
-//   // SEND STK PUSH
-//   // =================================================
+  // =================================================
+  // SEND STK PUSH
+  // =================================================
 
-//   try {
+  try {
 
-//     await sendWhatsAppMessage(
-//       from,
+    await sendWhatsAppMessage(
+      from,
 
-//       "⏳ Tafadhali subiri...\n\n" +
+      "⏳ Tafadhali subiri...\n\n" +
 
-//       "Tunatuma ombi la malipo kwa nambari yako ya M-Pesa."
-//     );
+      "Tunatuma ombi la malipo kwa nambari yako ya M-Pesa."
+    );
 
-//     console.log(
-//       "🚀 Calling STK Push Function..."
-//     );
+    console.log(
+      "🚀 Calling STK Push Function..."
+    );
 
-//     const stkResponse =
-//       await axios.post(
-//         process.env.STK_PUSH_FUNCTION_URL,
+    const stkResponse =
+      await axios.post(
+        process.env.STK_PUSH_FUNCTION_URL,
 
-//         {
-//           phoneNumber:
-//             mpesaNumber,
+        {
+          phoneNumber:
+            mpesaNumber,
 
-//           amount:
-//             activeContribution.amountPerMember,
+          amount:
+            activeContribution.amountPerMember,
 
-//           accountRef:
-//             activeContribution.title,
+          accountRef:
+            activeContribution.title,
 
-//           memberId:
-//             session.memberId,
+          memberId:
+            session.memberId,
 
-//           contributionId:
-//             activeContribution.$id,
+          contributionId:
+            activeContribution.$id,
 
-//           targetMemberId:
-//             session.memberId,
+          targetMemberId:
+            session.memberId,
 
-//           payerId:
-//             session.memberId
-//         }
-//       );
+          payerId:
+            session.memberId
+        }
+      );
 
-//     console.log(
-//       "📥 STK FUNCTION RESPONSE:",
-//       stkResponse.data
-//     );
+    console.log(
+      "📥 STK FUNCTION RESPONSE:",
+      stkResponse.data
+    );
 
-//     if (
-//       !stkResponse.data?.success
-//     ) {
+    if (
+      !stkResponse.data?.success
+    ) {
 
-//       throw new Error(
-//         stkResponse.data?.error ||
-//         "STK Push failed"
-//       );
+      throw new Error(
+        stkResponse.data?.error ||
+        "STK Push failed"
+      );
 
-//     }
+    }
 
-//     // =================================================
-//     // SAVE PAYMENT SESSION
-//     // =================================================
+    // =================================================
+    // SAVE PAYMENT SESSION
+    // =================================================
 
-//     userSessions[from] = {
-//       state:
-//         "PAYMENT_PENDING",
+    userSessions[from] = {
+      state:
+        "PAYMENT_PENDING",
 
-//       memberId:
-//         session.memberId,
+      memberId:
+        session.memberId,
 
-//       mpesaNumber:
-//         mpesaNumber,
+      mpesaNumber:
+        mpesaNumber,
 
-//       contributionId:
-//         activeContribution.$id,
+      contributionId:
+        activeContribution.$id,
 
-//       contributionTitle:
-//         activeContribution.title
-//     };
+      contributionTitle:
+        activeContribution.title
+    };
 
-//     await sendWhatsAppMessage(
-//       from,
+    await sendWhatsAppMessage(
+      from,
 
-//       "📲 STK Push imetumwa!\n\n" +
+      "📲 STK Push imetumwa!\n\n" +
 
-//       "Tafadhali angalia simu yako na uweke M-Pesa PIN yako kukamilisha malipo."
-//     );
+      "Tafadhali angalia simu yako na uweke M-Pesa PIN yako kukamilisha malipo."
+    );
 
-//   } catch (error) {
+  } catch (error) {
 
-//     console.error(
-//       "❌ STK Push ERROR:",
-//       error.response?.data ||
-//       error.message ||
-//       error
-//     );
+    console.error(
+      "❌ STK Push ERROR:",
+      error.response?.data ||
+      error.message ||
+      error
+    );
 
-//     await sendWhatsAppMessage(
-//       from,
+    await sendWhatsAppMessage(
+      from,
 
-//       "❌ Samahani, hatukuweza kuanzisha malipo kwa sasa.\n\n" +
+      "❌ Samahani, hatukuweza kuanzisha malipo kwa sasa.\n\n" +
 
-//       "Tafadhali jaribu tena baadaye."
-//     );
+      "Tafadhali jaribu tena baadaye."
+    );
 
-//   }
+  }
 
-//   return res.sendStatus(
-//     200
-//   );
-// }
+  return res.sendStatus(
+    200
+  );
+}
 
   // -------------------------------------------------
   // MAIN MENU
