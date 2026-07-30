@@ -2004,6 +2004,7 @@ if (
   // =================================================
 // AWAITING MPESA NUMBER
 // =================================================
+console.log("🔥 ENTERED AWAITING_MPESA_NUMBER BLOCK");
 
 if (
   session.state ===
