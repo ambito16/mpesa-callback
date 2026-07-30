@@ -1009,75 +1009,178 @@ if (
 // GET MISSED CONTRIBUTION
 // =================================================
 
-console.log(
-  "📌 CONTRIBUTION ID FROM MEMBER:",
-  member.contributionId
-);
+// console.log(
+//   "📌 CONTRIBUTION ID FROM MEMBER:",
+//   member.contributionId
+// );
 
-let formattedStart =
-  "tarehe isiyojulikana";
+// let formattedStart =
+//   "tarehe isiyojulikana";
 
-let formattedEnd =
-  "tarehe isiyojulikana";
+// let formattedEnd =
+//   "tarehe isiyojulikana";
 
-let contributionDescription =
-  "mchango husika";
+// let contributionDescription =
+//   "mchango husika";
 
-if (
-  member.contributionId
-) {
+// if (
+//   member.contributionId
+// ) {
 
-  const contribution =
-    await databases.getDocument(
-      DATABASE_ID,
-      CONTRIBUTIONS_COLLECTION,
-      member.contributionId
-    );
+//   const contribution =
+//     await databases.getDocument(
+//       DATABASE_ID,
+//       CONTRIBUTIONS_COLLECTION,
+//       member.contributionId
+//     );
 
-  console.log(
-    "✅ MISSED CONTRIBUTION FOUND:",
-    JSON.stringify(
-      contribution,
-      null,
-      2
-    )
+//   console.log(
+//     "✅ MISSED CONTRIBUTION FOUND:",
+//     JSON.stringify(
+//       contribution,
+//       null,
+//       2
+//     )
+//   );
+
+//   // Get the contribution deadline
+
+//   const startDate =
+//     contribution.deadlineDate
+//       ? new Date(
+//           contribution.deadlineDate
+//         )
+//       : null;
+
+//   // Create the WhatsApp probation end date
+
+//   const endDate =
+//     startDate
+//       ? new Date(
+//           startDate
+//         )
+//       : null;
+
+//   // Add ONE YEAR
+
+//   if (
+//     endDate
+//   ) {
+
+//     endDate.setFullYear(
+//       endDate.getFullYear() + 1
+//     );
+
+//   }
+
+//   // Format start date
+
+//   if (
+//     startDate
+//   ) {
+
+//     formattedStart =
+//       startDate.toLocaleDateString(
+//         "en-GB",
+//         {
+//           day: "numeric",
+//           month: "long",
+//           year: "numeric"
+//         }
+//       );
+
+//   }
+
+//   // Format end date
+
+//   if (
+//     endDate
+//   ) {
+
+//     formattedEnd =
+//       endDate.toLocaleDateString(
+//         "en-GB",
+//         {
+//           day: "numeric",
+//           month: "long",
+//           year: "numeric"
+//         }
+//       );
+
+//   }
+
+//   // Get contribution description
+
+//   contributionDescription =
+//     contribution.description ||
+//     contribution.title ||
+//     "mchango husika";
+
+// } else {
+
+//   console.log(
+//     "❌ NO contributionId FOUND ON MEMBER"
+//   );
+
+// }
+
+// =================================================
+// GET MISSED CONTRIBUTION
+// =================================================
+
+let formattedStart = "tarehe isiyojulikana";
+let formattedEnd = "tarehe isiyojulikana";
+let contributionDescription = "mchango husika";
+
+// Get all expired contributions (latest first)
+
+const contributionsResult =
+  await databases.listDocuments(
+    DATABASE_ID,
+    CONTRIBUTIONS_COLLECTION,
+    [
+      Query.lessThan(
+        "deadlineDate",
+        new Date().toISOString()
+      ),
+      Query.orderDesc("deadlineDate"),
+      Query.limit(100)
+    ]
   );
 
-  // Get the contribution deadline
+for (const contribution of contributionsResult.documents) {
 
-  const startDate =
-    contribution.deadlineDate
-      ? new Date(
-          contribution.deadlineDate
-        )
-      : null;
+  // Check if member paid this contribution
 
-  // Create the WhatsApp probation end date
+  const paymentResult =
+    await databases.listDocuments(
+      DATABASE_ID,
+      PAYMENTS_COLLECTION,
+      [
+        Query.equal("memberId", member.$id),
+        Query.equal("contributionId", contribution.$id),
+        Query.equal("status", "paid"),
+        Query.limit(1)
+      ]
+    );
 
-  const endDate =
-    startDate
-      ? new Date(
-          startDate
-        )
-      : null;
+  // If no payment exists, this is the missed contribution
 
-  // Add ONE YEAR
+  if (paymentResult.documents.length === 0) {
 
-  if (
-    endDate
-  ) {
+    const startDate = new Date(
+      contribution.deadlineDate
+    );
+
+    const endDate = new Date(
+      contribution.deadlineDate
+    );
+
+    // WhatsApp probation = 1 year
 
     endDate.setFullYear(
       endDate.getFullYear() + 1
     );
-
-  }
-
-  // Format start date
-
-  if (
-    startDate
-  ) {
 
     formattedStart =
       startDate.toLocaleDateString(
@@ -1089,14 +1192,6 @@ if (
         }
       );
 
-  }
-
-  // Format end date
-
-  if (
-    endDate
-  ) {
-
     formattedEnd =
       endDate.toLocaleDateString(
         "en-GB",
@@ -1107,21 +1202,23 @@ if (
         }
       );
 
+    contributionDescription =
+      contribution.description ||
+      contribution.title ||
+      "mchango husika";
+
+    console.log(
+      "✅ MISSED CONTRIBUTION:",
+      contribution.$id
+    );
+
+    console.log(
+      "📅 DEADLINE:",
+      contribution.deadlineDate
+    );
+
+    break;
   }
-
-  // Get contribution description
-
-  contributionDescription =
-    contribution.description ||
-    contribution.title ||
-    "mchango husika";
-
-} else {
-
-  console.log(
-    "❌ NO contributionId FOUND ON MEMBER"
-  );
-
 }
     // =================================================
     // PROBATION MESSAGE
