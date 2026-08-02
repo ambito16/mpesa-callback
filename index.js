@@ -1554,16 +1554,29 @@ async function showContributions(
       message +=
         "━━━━━━━━━━━━━━━━━━\n\n" +
 
-        "📜 *PREVIOUS CONTRIBUTIONS*\n\n";
+        "📜 *PREVIOUS CONTRIBUTIONS*\n\n" +
 
-      previousContributions.forEach(
-        (contribution, index) => {
+        "💳 Lipa Saa hii kwa mchango wako wa sasa.\n\n";
 
-          message +=
-            `${index + 1}️⃣ ${contribution.title}\n`;
+      for (const [index, contribution] of previousContributions.entries()) {
+        const paid = await hasMemberPaid(
+          memberId,
+          contribution.$id
+        );
 
-        }
-      );
+        const details =
+          contribution.description ||
+          contribution.title ||
+          "Mchango";
+
+        message +=
+          `${index + 1}️⃣ ${contribution.title || "Mchango"}${details !== contribution.title ? ` - ${details}` : ""}\n`;
+
+        message +=
+          paid
+            ? "   ✅ Ulilipa hii\n\n"
+            : "   ❌ Hii haukulipa\n\n";
+      }
 
     }
 
@@ -2112,9 +2125,10 @@ if (
     await sendWhatsAppMessage(
       from,
 
-      "⏳ Tafadhali subiri...\n\n" +
+      "⏳ *Tafadhali subiri.....*\n\n" +
 
-      "Tunatuma ombi la malipo kwa nambari yako ya M-Pesa."
+      "Tunatuma PROMP kwa nambari ya M-Pesa uliyoweka.\n" +
+      "Tafadhali angalia hiyo simu na uweke M-Pesa PIN kukamilisha malipo."
     );
 
     console.log(
@@ -2128,14 +2142,15 @@ if (
 );
 
 const accountRef =
-  `${member.firstName} ${member.secondName} ${member.lastName}`;
+  `${member.firstName || ""} ${member.secondName || ""} ${member.lastName || ""}`.trim() ||
+  "Contribution Payment";
 
-await axios.post(
+const stkResponse = await axios.post(
   process.env.STK_PUSH_FUNCTION_URL,
   {
     phoneNumber: mpesaNumber,
     amount: activeContribution.amountPerMember,
-    accountRef: accountRef,   // <-- change this line
+    accountRef: accountRef,
     memberId: session.memberId,
     contributionId: activeContribution.$id,
     targetMemberId: session.memberId,
