@@ -107,21 +107,40 @@ app.post("/callback", async (req, res) => {
   );
 
   try {
-    const payment =
-      await databases.listDocuments(
+    let payment = null;
+    let paymentQueryField = null;
+
+    const possibleFields = [
+      "checkoutRequestID",
+      "checkoutRequestId"
+    ];
+
+    for (const fieldName of possibleFields) {
+      const result = await databases.listDocuments(
         DATABASE_ID,
         PAYMENTS_COLLECTION,
         [
           Query.equal(
-            "checkoutRequestID",
+            fieldName,
             checkoutRequestID
           )
         ]
       );
 
-    if (payment.documents.length === 0) {
+      if (result.documents.length > 0) {
+        payment = result;
+        paymentQueryField = fieldName;
+        break;
+      }
+    }
+
+    if (!payment || payment.documents.length === 0) {
       console.log(
-        "❌ PAYMENT NOT FOUND"
+        "❌ PAYMENT NOT FOUND",
+        {
+          checkoutRequestID,
+          checkedFields: possibleFields
+        }
       );
 
       return res.json({
@@ -129,8 +148,19 @@ app.post("/callback", async (req, res) => {
       });
     }
 
-    const doc =
-      payment.documents[0];
+    const doc = payment.documents[0];
+
+    console.log(
+      "✅ PAYMENT RECORD FOUND",
+      {
+        paymentId: doc.$id,
+        paymentQueryField,
+        status: doc.status,
+        memberId: doc.memberId,
+        targetMemberId: doc.targetMemberId,
+        payerId: doc.payerId
+      }
+    );
 
     if (doc.status === "paid") {
       console.log(
@@ -189,14 +219,29 @@ app.post("/callback", async (req, res) => {
         }
       );
 
-      if (doc.targetMemberId) {
+      const memberIdToMark =
+        doc.targetMemberId ||
+        doc.memberId ||
+        doc.payerId ||
+        null;
+
+      if (memberIdToMark) {
         await databases.updateDocument(
           DATABASE_ID,
           MEMBERS_COLLECTION,
-          doc.targetMemberId,
+          memberIdToMark,
           {
             status: "paid"
           }
+        );
+
+        console.log(
+          "✅ MEMBER STATUS UPDATED",
+          memberIdToMark
+        );
+      } else {
+        console.log(
+          "⚠️ NO MEMBER ID FOUND ON PAYMENT RECORD"
         );
       }
 
@@ -1516,6 +1561,7 @@ async function showContributions(
           "❌ Wewe bado hujalipa.\n\n" +
 
           `Je! Ungependa kulipa sa hizi?\n` +
+          `Angalia hapo chini kabisa ufinye *Lipa saa hii*\n` +
 
           `⏳ Kumbuka: Imebakia siku ${daysLeft} hadi deadline.\n\n`;
 
@@ -1554,9 +1600,7 @@ async function showContributions(
       message +=
         "━━━━━━━━━━━━━━━━━━\n\n" +
 
-        "📜 *PREVIOUS CONTRIBUTIONS*\n\n" +
-
-        "💳 Lipa Saa hii kwa mchango wako wa sasa.\n\n";
+        "📜 *PREVIOUS CONTRIBUTIONS*\n\n" 
 
       for (const [index, contribution] of previousContributions.entries()) {
         const paid = await hasMemberPaid(
