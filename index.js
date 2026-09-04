@@ -6,6 +6,8 @@ const axios = require("axios");
 const bodyParser = require("body-parser");
 const { Client, Databases, Query } = require("node-appwrite");
 
+const cache = require("./cache");
+
 const app = express();
 app.use(bodyParser.json());
 
@@ -219,6 +221,16 @@ app.post("/callback", async (req, res) => {
         }
       );
 
+      // Invalidate caches related to this payment/member
+      try {
+        if (doc.memberId && doc.contributionId) {
+          cache.del(`paid:${doc.memberId}:${doc.contributionId}`);
+        }
+        cache.del(`contributions:all`);
+      } catch (err) {
+        console.warn("Cache invalidation warning:", err.message);
+      }
+
       const memberIdToMark =
         doc.targetMemberId ||
         doc.memberId ||
@@ -239,6 +251,13 @@ app.post("/callback", async (req, res) => {
           "✅ MEMBER STATUS UPDATED",
           memberIdToMark
         );
+        // Invalidate member-related caches
+        try {
+          cache.del(`member:id:${memberIdToMark}`);
+          cache.del(`family:${memberIdToMark}`);
+        } catch (err) {
+          console.warn("Cache invalidation warning:", err.message);
+        }
       } else {
         console.log(
           "⚠️ NO MEMBER ID FOUND ON PAYMENT RECORD"
@@ -263,6 +282,16 @@ app.post("/callback", async (req, res) => {
           status: "failed"
         }
       );
+
+      // Invalidate payment-related cache entries
+      try {
+        if (doc.memberId && doc.contributionId) {
+          cache.del(`paid:${doc.memberId}:${doc.contributionId}`);
+        }
+        cache.del(`contributions:all`);
+      } catch (err) {
+        console.warn("Cache invalidation warning:", err.message);
+      }
 
       console.log(
         "❌ PAYMENT FAILED UPDATED"
@@ -472,49 +501,23 @@ async function findMember(
     cleanLookup
   );
 
-  // First search by ID number
+  // Try cached lookups by common fields
+  const possibleFields = ["idNumber", "membershipNumber", "membershipNumber" /* keep compatibility */];
 
-  let result =
-    await databases.listDocuments(
-      DATABASE_ID,
-      MEMBERS_COLLECTION,
-      [
-        Query.equal(
-          "idNumber",
-          cleanLookup
-        )
-      ]
-    );
+  for (const fieldName of possibleFields) {
+    const cacheKey = `member:lookup:${fieldName}:${cleanLookup}`;
 
-  if (
-    result.documents.length > 0
-  ) {
+    const cached = await cache.memoize(cacheKey, 3600, async () => {
+      const r = await databases.listDocuments(
+        DATABASE_ID,
+        MEMBERS_COLLECTION,
+        [Query.equal(fieldName, cleanLookup)]
+      );
 
-    return result.documents[0];
+      return r.documents.length > 0 ? r.documents[0] : null;
+    });
 
-  }
-
-  // If not found, search
-  // by membership number
-
-  result =
-    await databases.listDocuments(
-      DATABASE_ID,
-      MEMBERS_COLLECTION,
-      [
-        Query.equal(
-          "membershipNumber",
-          cleanLookup
-        )
-      ]
-    );
-
-  if (
-    result.documents.length > 0
-  ) {
-
-    return result.documents[0];
-
+    if (cached) return cached;
   }
 
   return null;
@@ -541,12 +544,16 @@ async function getMemberForSession(
 
     try {
 
-      const member =
-        await databases.getDocument(
-          DATABASE_ID,
-          MEMBERS_COLLECTION,
-          session.memberId
-        );
+      const member = await cache.memoize(
+        `member:id:${session.memberId}`,
+        3600,
+        async () =>
+          await databases.getDocument(
+            DATABASE_ID,
+            MEMBERS_COLLECTION,
+            session.memberId
+          )
+      );
 
 
         console.log(
@@ -658,85 +665,25 @@ async function getFamily(
     memberId
   );
 
-  // ---------------------------------------------------
-  // SPOUSE
-  // ---------------------------------------------------
+  // Cache combined family lookup for short TTL
+  const cacheKey = `family:${memberId}`;
 
-  const spouseResult =
-    await databases.listDocuments(
-      DATABASE_ID,
-      SPOUSES_COLLECTION,
-      [
-        Query.equal(
-          "membersTable",
-          memberId
-        )
-      ]
-    );
+  return await cache.memoize(cacheKey, 300, async () => {
+    const [spouseResult, childrenResult, parentsResult, nextOfKinResult] =
+      await Promise.all([
+        databases.listDocuments(DATABASE_ID, SPOUSES_COLLECTION, [Query.equal("membersTable", memberId)]),
+        databases.listDocuments(DATABASE_ID, CHILDREN_COLLECTION, [Query.equal("membersTable", memberId)]),
+        databases.listDocuments(DATABASE_ID, PARENTS_COLLECTION, [Query.equal("membersTable", memberId)]),
+        databases.listDocuments(DATABASE_ID, NEXT_OF_KIN_COLLECTION, [Query.equal("membersTable", memberId)])
+      ]);
 
-  // ---------------------------------------------------
-  // CHILDREN
-  // ---------------------------------------------------
-
-  const childrenResult =
-    await databases.listDocuments(
-      DATABASE_ID,
-      CHILDREN_COLLECTION,
-      [
-        Query.equal(
-          "membersTable",
-          memberId
-        )
-      ]
-    );
-
-  // ---------------------------------------------------
-  // PARENTS
-  // ---------------------------------------------------
-
-  const parentsResult =
-    await databases.listDocuments(
-      DATABASE_ID,
-      PARENTS_COLLECTION,
-      [
-        Query.equal(
-          "membersTable",
-          memberId
-        )
-      ]
-    );
-
-  // ---------------------------------------------------
-  // NEXT OF KIN
-  // ---------------------------------------------------
-
-  const nextOfKinResult =
-    await databases.listDocuments(
-      DATABASE_ID,
-      NEXT_OF_KIN_COLLECTION,
-      [
-        Query.equal(
-          "membersTable",
-          memberId
-        )
-      ]
-    );
-
-  return {
-
-    spouses:
-      spouseResult.documents,
-
-    children:
-      childrenResult.documents,
-
-    parents:
-      parentsResult.documents,
-
-    nextOfKin:
-      nextOfKinResult.documents
-
-  };
+    return {
+      spouses: spouseResult.documents,
+      children: childrenResult.documents,
+      parents: parentsResult.documents,
+      nextOfKin: nextOfKinResult.documents
+    };
+  });
 }
 
 // =====================================================
@@ -1337,45 +1284,17 @@ async function getActiveContribution() {
   const now =
     new Date();
 
-  const result =
-    await databases.listDocuments(
-      DATABASE_ID,
-      CONTRIBUTIONS_COLLECTION,
-      [
-        Query.limit(20)
-      ]
-    );
+  const contributions = await cache.memoize("contributions:all", 30, async () => {
+    const r = await databases.listDocuments(DATABASE_ID, CONTRIBUTIONS_COLLECTION, [Query.limit(50)]);
+    return r.documents || [];
+  });
 
-  const activeContribution =
-    result.documents.find(
-      (contribution) => {
-
-        if (
-          !contribution.startDate ||
-          !contribution.deadlineDate
-        ) {
-
-          return false;
-
-        }
-
-        const startDate =
-          new Date(
-            contribution.startDate
-          );
-
-        const deadlineDate =
-          new Date(
-            contribution.deadlineDate
-          );
-
-        return (
-          now >= startDate &&
-          now <= deadlineDate
-        );
-
-      }
-    );
+  const activeContribution = contributions.find((contribution) => {
+    if (!contribution.startDate || !contribution.deadlineDate) return false;
+    const startDate = new Date(contribution.startDate);
+    const deadlineDate = new Date(contribution.deadlineDate);
+    return now >= startDate && now <= deadlineDate;
+  });
 
   return activeContribution || null;
 }
@@ -1391,33 +1310,18 @@ async function hasMemberPaid(
   contributionId
 ) {
 
-  const result =
-    await databases.listDocuments(
-      DATABASE_ID,
-      PAYMENTS_COLLECTION,
-      [
-        Query.equal(
-          "memberId",
-          memberId
-        ),
+  const cacheKey = `paid:${memberId}:${contributionId}`;
 
-        Query.equal(
-          "contributionId",
-          contributionId
-        ),
+  return await cache.memoize(cacheKey, 60, async () => {
+    const result = await databases.listDocuments(DATABASE_ID, PAYMENTS_COLLECTION, [
+      Query.equal("memberId", memberId),
+      Query.equal("contributionId", contributionId),
+      Query.equal("status", "paid"),
+      Query.limit(1)
+    ]);
 
-        Query.equal(
-          "status",
-          "paid"
-        ),
-
-        Query.limit(1)
-      ]
-    );
-
-  return (
-    result.documents.length > 0
-  );
+    return result.documents.length > 0;
+  });
 }
 
 
@@ -2171,8 +2075,7 @@ if (
 
       "⏳ *Tafadhali subiri.....*\n\n" +
 
-      "Tunatuma PROMP kwa nambari ya M-Pesa uliyoweka.\n" +
-      "Tafadhali angalia hiyo simu na uweke M-Pesa PIN kukamilisha malipo."
+      "Tunatuma PROMP kwa nambari ya M-Pesa uliyoweka kwa muda mfupi."
     );
 
     console.log(
@@ -2242,9 +2145,9 @@ const stkResponse = await axios.post(
     await sendWhatsAppMessage(
       from,
 
-      "📲 STK Push imetumwa!\n\n" +
+      "📲 *STK Push imetumwa!*\n\n" +
 
-      "Tafadhali angalia simu yako na uweke M-Pesa PIN yako kukamilisha malipo."
+      "Tafadhali angalia simu yako na uweke M-Pesa PIN kukamilisha malipo."
     );
 
   } catch (error) {
