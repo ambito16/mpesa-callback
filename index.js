@@ -444,7 +444,7 @@ async function sendMainMenu(to) {
     "_Tafadhali chagua option:_\n\n" +
 
     "1️⃣ My Contributions\n" +
-    // "2️⃣ My Profile\n" +
+    "2️⃣ My Profile\n" +
     "3️⃣ Meeting Information\n" +
     "4️⃣ Contact Admin\n\n" +
 
@@ -474,13 +474,15 @@ async function askForProfileLookup(
 
     "👤 *My Profile*\n\n" +
 
-    "Tafadhali weka:\n\n" +
+    // "Tafadhali weka:\n\n" +
 
-    "• ID Number yako. *Ama*\n" +
+    // "• ID Number yako. *Ama*\n" +
   
-    "• Membership Number yako\n\n" +
+    // "• Membership Number yako\n\n" +
 
-    "Mfano: 12345678 *Ama* 013"
+    // "Mfano: 12345678 *Ama* 013"
+    "Huduma hii itarejea kwa muda mfupi:\n" + 
+    "Tafathali kuwa na subira"
   );
 }
 
