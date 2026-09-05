@@ -444,7 +444,7 @@ async function sendMainMenu(to) {
     "_Tafadhali chagua option:_\n\n" +
 
     "1️⃣ My Contributions\n" +
-    "2️⃣ My Profile\n" +
+    // "2️⃣ My Profile\n" +
     "3️⃣ Meeting Information\n" +
     "4️⃣ Contact Admin\n\n" +
 
