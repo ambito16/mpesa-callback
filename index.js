@@ -446,7 +446,7 @@ async function sendMainMenu(to) {
     "1️⃣ My Contributions\n" +
     // "2️⃣ My Profile\n" +
     // "3️⃣ Meeting Information\n" +
-    // "4️⃣ Contact Admin\n\n" +
+    "4️⃣ Contact Admin\n\n" +
 
     "_Reply with the number of your choice._";
 
